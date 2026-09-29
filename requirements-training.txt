@@ -30,6 +30,6 @@ nltk==3.9.2
 termcolor==2.4.0
 tqdm==4.67.1
 agentops==0.4.21
-litellm[proxy]==1.80.0
+litellm[proxy]==1.84.0
 openai==2.8.0
 pydantic==2.12.4
