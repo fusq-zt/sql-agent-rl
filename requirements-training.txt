@@ -26,7 +26,7 @@ langgraph-prebuilt==1.0.5
 langgraph-sdk==0.2.12
 sqlalchemy==2.0.44
 sqlparse==0.5.3
-nltk==3.9.2
+nltk==3.10.3
 termcolor==2.4.0
 tqdm==4.67.1
 agentops==0.4.21
