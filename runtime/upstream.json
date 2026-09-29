@@ -1,0 +1,28 @@
+{
+  "repository": "https://github.com/microsoft/agent-lightning.git",
+  "commit": "6db3c73dc0af2e50fe80e56873a57c1703f1b2a7",
+  "version": "0.3.1",
+  "patch_sha256": "25b303678cf7de71173b43c6d1d44bbe638c332fba7319354a94fe161eaa4f01",
+  "files": {
+    "agentlightning/verl/daemon.py": {
+      "base_sha256": "0cbce7e1185e278ddbf95a66c55fee9495d2e85070b781074ed35f68de13b5b3",
+      "sha256": "3ea59f437d292be48c7273eace2803378413b9d238827808d72f17ca542443e7"
+    },
+    "agentlightning/verl/trainer.py": {
+      "base_sha256": "8dc21991b76d16563815d8ff262dbf6116fdc7f2d0ae6502be912fbc4d5c4e3b",
+      "sha256": "98db796f57bb04e2690b2a84dbef5a10937c26f953e104f49d3f524d27fee4f6"
+    },
+    "agentlightning/adapter/triplet.py": {
+      "base_sha256": "1772ea02c36e2c1d0a97a310515e413ad382c64e7f147ef60d7a835e9c029cf4",
+      "sha256": "1772ea02c36e2c1d0a97a310515e413ad382c64e7f147ef60d7a835e9c029cf4"
+    },
+    "agentlightning/algorithm/verl/interface.py": {
+      "base_sha256": "ac0869872390f2e4ebf0fa9710875e88b2b61c377b9175737c141bb352529860",
+      "sha256": "ac0869872390f2e4ebf0fa9710875e88b2b61c377b9175737c141bb352529860"
+    },
+    "agentlightning/verl/config.yaml": {
+      "base_sha256": "a83fb007d66562fb6859361343deb9ea7ed6298c579c21f77b59b3ba0972bc91",
+      "sha256": "a83fb007d66562fb6859361343deb9ea7ed6298c579c21f77b59b3ba0972bc91"
+    }
+  }
+}

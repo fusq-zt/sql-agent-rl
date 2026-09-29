@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="770" viewBox="0 0 1400 770" role="img" aria-labelledby="title desc">
+<title id="title">SQL Agent RL 整体方案</title>
+<desc id="desc">LangGraph 组织生成、执行、检查与改写。最终 SQL 获得执行匹配奖励，生成和改写轨迹经 Agent Lightning 接入 verl GRPO，更新共享策略。</desc>
+<defs>
+<marker id="gray" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#91a2b8"/></marker>
+<marker id="blue" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#3f7fd9"/></marker>
+<marker id="green" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#219887"/></marker>
+<marker id="gold" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#c38d31"/></marker>
+</defs><g font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+<rect x="0" y="0" width="1400" height="770" rx="24" fill="#f7f9fc" stroke="none"/>
+<text x="42" y="65" font-size="35" font-weight="750" fill="#192c45" text-anchor="start">SQL Agent RL</text>
+<text x="1360" y="63" font-size="21" font-weight="500" fill="#667b99" text-anchor="end">Qwen2.5-Coder-1.5B</text>
+<rect x="32" y="105" width="1336" height="340" rx="22" fill="#ffffff" stroke="#dce5ef"/>
+<text x="60" y="151" font-size="24" font-weight="700" fill="#2e507b" text-anchor="start">Agent 交互</text>
+<text x="1340" y="151" font-size="19" font-weight="500" fill="#8190a5" text-anchor="end">LangGraph</text>
+<path d="M 264 243 H 324" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<path d="M 524 243 H 584" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<path d="M 784 243 H 844" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<path d="M 1044 243 H 1104" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<rect x="64" y="205" width="200" height="76" rx="16" fill="#f7f9fc" stroke="#dce4ee"/>
+<text x="164.0" y="239" font-size="23" font-weight="650" fill="#2f415a" text-anchor="middle">问题 + Schema</text>
+<text x="164.0" y="265" font-size="17" font-weight="400" fill="#75859b" text-anchor="middle">Spider 1.0</text>
+<rect x="324" y="205" width="200" height="76" rx="16" fill="#edf4ff" stroke="#b9d1f5"/>
+<text x="424.0" y="252" font-size="23" font-weight="650" fill="#3167b5" text-anchor="middle">生成 SQL</text>
+<rect x="584" y="205" width="200" height="76" rx="16" fill="#f7f9fc" stroke="#dce4ee"/>
+<text x="684.0" y="252" font-size="23" font-weight="650" fill="#2f415a" text-anchor="middle">执行 SQL</text>
+<rect x="844" y="205" width="200" height="76" rx="16" fill="#f7f9fc" stroke="#dce4ee"/>
+<text x="944.0" y="252" font-size="23" font-weight="650" fill="#2f415a" text-anchor="middle">检查结果</text>
+<rect x="1104" y="205" width="200" height="76" rx="16" fill="#f7f9fc" stroke="#dce4ee"/>
+<text x="1204.0" y="252" font-size="23" font-weight="650" fill="#2f415a" text-anchor="middle">最终 SQL</text>
+<text x="1073" y="225" font-size="16" font-weight="400" fill="#8695a7" text-anchor="middle">结束</text>
+<path d="M 944 281 V 312 Q 944 319 937 319 H 921 Q 914 319 914 326 V 335" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<text x="968" y="317" font-size="17" font-weight="500" fill="#8695a7" text-anchor="start">纠错</text>
+<rect x="794" y="335" width="240" height="76" rx="16" fill="#edf4ff" stroke="#b9d1f5"/>
+<text x="914.0" y="382" font-size="23" font-weight="650" fill="#3167b5" text-anchor="middle">改写 SQL</text>
+<path d="M 794 373 H 692 Q 684 373 684 365 V 281" fill="none" stroke="#91a2b8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gray)" />
+<rect x="32" y="528" width="940" height="210" rx="22" fill="#fafffd" stroke="#cfe6dd"/>
+<text x="60" y="570" font-size="24" font-weight="700" fill="#276e61" text-anchor="start">GRPO 训练</text>
+<text x="320" y="570" font-size="19" font-weight="500" fill="#6c968b" text-anchor="start">Agent Lightning + verl</text>
+<rect x="1000" y="528" width="368" height="210" rx="22" fill="#fffdf7" stroke="#ecdec1"/>
+<text x="1028" y="570" font-size="24" font-weight="700" fill="#8d6a2e" text-anchor="start">终端奖励</text>
+<rect x="64" y="608" width="240" height="76" rx="16" fill="#edf8f4" stroke="#b9dfd2"/>
+<text x="184.0" y="655" font-size="23" font-weight="650" fill="#267866" text-anchor="middle">轨迹与奖励</text>
+<rect x="340" y="608" width="250" height="76" rx="16" fill="#edf8f4" stroke="#b9dfd2"/>
+<text x="465.0" y="655" font-size="23" font-weight="650" fill="#267866" text-anchor="middle">组内相对优势</text>
+<rect x="630" y="608" width="310" height="76" rx="16" fill="#edf8f4" stroke="#b9dfd2"/>
+<text x="785.0" y="655" font-size="23" font-weight="650" fill="#267866" text-anchor="middle">GRPO 更新</text>
+<path d="M 304 646 H 340" fill="none" stroke="#219887" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#green)" />
+<path d="M 590 646 H 630" fill="none" stroke="#219887" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#green)" />
+<rect x="1032" y="608" width="304" height="76" rx="16" fill="#fff6e8" stroke="#e9d2a6"/>
+<text x="1184.0" y="642" font-size="23" font-weight="650" fill="#956e29" text-anchor="middle">执行结果匹配</text>
+<text x="1184.0" y="668" font-size="17" font-weight="400" fill="#75859b" text-anchor="middle">R = 1 / 0</text>
+<path d="M 184 445 V 528" fill="none" stroke="#3f7fd9" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#blue)" stroke-dasharray="7 7"/>
+<text x="205" y="493" font-size="18" font-weight="500" fill="#3f7fd9" text-anchor="start">生成 / 改写轨迹</text>
+<path d="M 1204 281 V 528" fill="none" stroke="#c38d31" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gold)" />
+<path d="M 1000 710 H 192 Q 184 710 184 702 V 684" fill="none" stroke="#c38d31" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#gold)" />
+<text x="544" y="701" font-size="17" font-weight="500" fill="#b18b43" text-anchor="start">奖励 R</text>
+<path d="M 785 608 V 493 Q 785 485 793 485 H 936 Q 944 485 944 477 V 445" fill="none" stroke="#219887" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#green)" />
+<text x="774" y="473" font-size="18" font-weight="500" fill="#219887" text-anchor="end">更新参数</text>
+</g></svg>

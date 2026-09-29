@@ -1,0 +1,38 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+.ssh*
+# Generated data, weights, outputs and external source
+/data/
+/models/
+/runs/
+/vendor/
+/artifacts/
+/evidence/
+/logs/
+/backup/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.sqlite
+*.parquet
+*.zip
+*.tar*
+*.zst
+# Python/build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+.DS_Store
+Thumbs.db

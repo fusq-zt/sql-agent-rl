@@ -1,0 +1,196 @@
+--- a/agentlightning/verl/daemon.py
++++ b/agentlightning/verl/daemon.py
+@@ -30,6 +30,14 @@
+     "get_left_padded_ids_and_attention_mask",
+     "get_right_padded_ids_and_attention_mask",
+ ]
++
++
++class NoTrainableTransitions(RuntimeError):
++    """A complete rollout batch naturally produced no selected policy actions."""
++
++    def __init__(self, metrics: Dict[str, Any]):
++        super().__init__("Complete rollout groups contain no selected policy transitions")
++        self.metrics = metrics
+ 
+ 
+ def ids_startswith(
+@@ -244,6 +252,7 @@
+             self.store = store
+             if llm_proxy is None:
+                 self.llm_proxy = LLMProxy(
++                    host="127.0.0.1",
+                     port=_find_available_port(),
+                     model_list=[],
+                     store=store,
+@@ -570,6 +579,8 @@
+                             config=RolloutConfig(
+                                 unresponsive_seconds=self.llm_timeout_seconds,
+                                 timeout_seconds=self.llm_timeout_seconds,
++                                max_attempts=2,
++                                retry_condition=["failed", "timeout", "unresponsive"],
+                             ),
+                             metadata=task_metadata,
+                         )
+@@ -628,6 +639,11 @@
+         2. Triplets: obtained by querying spans and feeding into the adapter
+         3. Final reward: extracted from last triplet's reward, searching backwards if not found
+         """
++        # Never convert a failed rollout into a zero reward and silently train
++        # an incomplete GRPO group. Store retries retain the original four IDs.
++        if rollout.status != "succeeded":
++            raise RuntimeError(f"Rollout {rollout.rollout_id} ended {rollout.status}; refusing incomplete group update")
++
+         # Query spans for this rollout (latest attempt)
+         spans = await self.store.query_spans(rollout.rollout_id, attempt_id="latest")
+ 
+@@ -646,6 +662,18 @@
+                 if triplet.reward is not None:
+                     final_reward = triplet.reward
+                     break
++
++        # A valid rewrite-only rollout may contain no selected node. Its scalar
++        # reward still exists, independently of the policy trace selection.
++        if final_reward is None:
++            from agentlightning.emitter.reward import get_reward_value
++
++            for span in sorted(spans, key=lambda value: value.sequence_id, reverse=True):
++                final_reward = get_reward_value(span)
++                if final_reward is not None:
++                    break
++        if final_reward is None:
++            raise RuntimeError(f"Completed rollout {rollout.rollout_id} has no reward; refusing update")
+ 
+         # Construct the Task object from Rollout
+         task = Task(
+@@ -1024,6 +1052,16 @@
+             raise ValueError(f"Unknown trace_aggregator level: {self.trace_aggregator.get('level')}")
+ 
+         n_transition = len(input_ids_list)
++        if n_transition == 0:
++            raise NoTrainableTransitions(
++                {
++                    "training/reward": float(np.mean(list(finished_id_to_final_reward.values()))),
++                    "training/n_rollouts": len(finished_id_to_final_reward),
++                    "training/n_rollouts_w_trace": 0,
++                    "training/n_rollouts_w_reward": sample_with_reward_count,
++                    "training/n_triplets": 0,
++                }
++            )
+         batch_input_ids = torch.LongTensor(input_ids_list).to(device)
+         input_attention_mask = torch.LongTensor(input_attention_mask_list).to(device)
+         batch_response_ids = torch.LongTensor(response_ids_list).to(device)
+--- a/agentlightning/verl/trainer.py
++++ b/agentlightning/verl/trainer.py
+@@ -38,7 +38,7 @@
+ from agentlightning.llm_proxy import LLMProxy
+ from agentlightning.store.base import LightningStore
+ 
+-from .daemon import AgentModeDaemon
++from .daemon import AgentModeDaemon, NoTrainableTransitions
+ 
+ __all__ = [
+     "AgentLightningTrainer",
+@@ -254,20 +254,33 @@
+                     gen_batch.non_tensor_batch, self.async_rollout_manager.server_addresses
+                 )
+                 self.agent_mode_daemon.run_until_all_finished()
+-                batch, agent_metrics = self.agent_mode_daemon.get_train_data_batch(
+-                    max_prompt_length=(
+-                        self.config.agentlightning.trace_aggregator.trajectory_max_prompt_length
+-                        if self.config.agentlightning.trace_aggregator.level.startswith("trajectory")
+-                        else self.config.data.max_prompt_length
+-                    ),
+-                    max_response_length=(
+-                        self.config.agentlightning.trace_aggregator.trajectory_max_response_length
+-                        if self.config.agentlightning.trace_aggregator.level.startswith("trajectory")
+-                        else self.config.data.max_response_length
+-                    ),
+-                    device=gen_batch.batch["fake_ids"].device,
+-                    global_steps=self.global_steps,
+-                )
++                try:
++                    batch, agent_metrics = self.agent_mode_daemon.get_train_data_batch(
++                        max_prompt_length=(
++                            self.config.agentlightning.trace_aggregator.trajectory_max_prompt_length
++                            if self.config.agentlightning.trace_aggregator.level.startswith("trajectory")
++                            else self.config.data.max_prompt_length
++                        ),
++                        max_response_length=(
++                            self.config.agentlightning.trace_aggregator.trajectory_max_response_length
++                            if self.config.agentlightning.trace_aggregator.level.startswith("trajectory")
++                            else self.config.data.max_response_length
++                        ),
++                        device=gen_batch.batch["fake_ids"].device,
++                        global_steps=self.global_steps,
++                    )
++                except NoTrainableTransitions as error:
++                    self.agent_mode_daemon.clear_data_and_server()
++                    self.async_rollout_manager.sleep()
++                    return {
++                        **error.metrics,
++                        "training/update_skipped_no_selected_actions": 1,
++                        "training/actual_optimizer_update": 0,
++                        "training/derived_optimizer_steps_per_rank": 0,
++                        "training/effective_transitions": 0,
++                        "training/effective_response_tokens": 0,
++                        "training/effective_prompt_tokens": 0,
++                    }
+                 metrics.update(agent_metrics)
+                 self.agent_mode_daemon.clear_data_and_server()
+                 self.async_rollout_manager.sleep()
+@@ -376,11 +389,30 @@
+             batch = batch[keep_indices]
+             # next, round to minibatch size
+             mini_batch_size = self.config.actor_rollout_ref.actor.ppo_mini_batch_size
++            # VERL 0.6.1 FSDP workers normalize this nominal task minibatch by
++            # rollout.n, then divide it across data-parallel ranks. Match that
++            # existing worker contract so its final accumulation is complete.
++            if self.config.actor_rollout_ref.actor.strategy in ("fsdp", "fsdp2"):
++                mini_batch_size *= self.config.actor_rollout_ref.rollout.n
++            metrics["training/effective_global_ppo_minibatch"] = int(mini_batch_size)
+             n_transition = len(batch)
+             random_indices = list(range(n_transition))
+             random.shuffle(random_indices)
+             batch.reorder(torch.tensor(random_indices).type(torch.int32))
+             n_remained_transition = n_transition // mini_batch_size * mini_batch_size
++            if n_remained_transition == 0:
++                metrics.update(
++                    {
++                        "training/update_skipped_insufficient_selected_actions": 1,
++                        "training/actual_optimizer_update": 0,
++                        "training/derived_optimizer_steps_per_rank": 0,
++                        "training/effective_transitions": 0,
++                        "training/effective_response_tokens": 0,
++                        "training/effective_prompt_tokens": 0,
++                        "training/n_triplets_dropped_remainder": n_transition,
++                    }
++                )
++                return metrics
+             batch = batch[list(range(n_remained_transition))]
+             metrics["training/n_triplets_dropped_remainder"] = n_transition - n_remained_transition
+ 
+@@ -409,6 +441,23 @@
+                     actor_output = self.actor_rollout_wg.update_actor(batch)
+                 actor_output_metrics = reduce_metrics(actor_output.meta_info["metrics"])
+                 metrics.update(actor_output_metrics)
++                metrics["training/actual_optimizer_update"] = 1
++                # Count complete native minibatches after a successful actor
++                # call. Checkpoint optimizer state provides the direct audit.
++                metrics["training/derived_optimizer_steps_per_rank"] = (
++                    len(batch) // mini_batch_size * int(self.config.actor_rollout_ref.actor.ppo_epochs)
++                )
++                # Observe the existing mask; do not construct a new loss/mask.
++                metrics["training/effective_transitions"] = len(batch)
++                metrics["training/effective_response_tokens"] = int(batch.batch["response_mask"].sum().item())
++                metrics["training/effective_prompt_tokens"] = int(
++                    batch.batch["attention_mask"][:, : -batch.batch["responses"].shape[-1]].sum().item()
++                )
++                raw_norms = np.asarray(actor_output.meta_info["metrics"].get("actor/grad_norm", []), dtype=float)
++                # The backend may already reduce these values. Their count is
++                # not a count of optimizer steps or independent rank gradients.
++                metrics["training/returned_grad_norm_metric_values"] = int(raw_norms.size)
++                metrics["training/returned_nonzero_grad_norm_metric_values"] = int(np.count_nonzero(raw_norms))
+ 
+             # Log rollout generations if enabled
+             rollout_data_dir = self.config.trainer.get("rollout_data_dir", None)
