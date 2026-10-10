@@ -9,7 +9,7 @@ transformers==4.57.1
 tokenizers==0.22.1
 ray==2.51.1
 tensordict==0.10.0
-datasets==4.3.0
+datasets==5.0.1
 numpy==2.2.6
 pandas==2.3.3
 pyarrow==22.0.0
